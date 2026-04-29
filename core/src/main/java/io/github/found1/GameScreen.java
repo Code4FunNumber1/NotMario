@@ -64,7 +64,7 @@ public class GameScreen implements Screen {
         // On Day 2 you'll split it into animations.
         playerTexture = new Texture("player.png");
 
-        TextureRegion[][] grid = TextureRegion.split(playerTexture, 64, 64);
+        TextureRegion[][] grid = TextureRegion.split(playerTexture, 32, 32);
 
         idleAnim = new Animation<>(0.2f, grid[0]);
         runAnim = new Animation<>(0.1f, grid[1]);
@@ -79,13 +79,13 @@ public class GameScreen implements Screen {
     public void render(float delta) {
 
         // ── INPUT ──
-        if (Gdx.input.isButtonPressed(Input.Keys.A)) {
+        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
             playerX -= MOVE_SPEED * delta;
             facingRight = false;
-        } else if (Gdx.input.isButtonPressed(Input.Keys.D)) {
+        } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
             playerX += MOVE_SPEED * delta;
             facingRight = true;
-        } else if (Gdx.input.isButtonPressed(Input.Keys.W) && onGround) {
+        } else if (Gdx.input.isKeyPressed(Input.Keys.W) && onGround) {
             velocityY = JUMP_VELOCITY;
             onGround = false;
         }
