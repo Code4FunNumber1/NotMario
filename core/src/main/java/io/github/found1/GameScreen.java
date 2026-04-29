@@ -20,7 +20,9 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class GameScreen implements Screen {
 
@@ -36,6 +38,11 @@ public class GameScreen implements Screen {
     private SpriteBatch batch;
     private OrthographicCamera camera;
     private Texture playerTexture;
+
+    // ── Animation ──
+    private Animation<TextureRegion> idleAnim, runAnim, jumpAnim;
+    private float stateTime = 0f;
+    boolean facingRight = true;
 
     // ── Player ──
     private float playerX = 100f;
@@ -56,6 +63,16 @@ public class GameScreen implements Screen {
         // For Day 1, just load the full sprite sheet as a single texture.
         // On Day 2 you'll split it into animations.
         playerTexture = new Texture("player.png");
+
+        TextureRegion[][] grid = TextureRegion.split(playerTexture, 64, 64);
+
+        idleAnim = new Animation<>(0.2f, grid[0]);
+        runAnim = new Animation<>(0.1f, grid[1]);
+        jumpAnim = new Animation<>(0.15f, grid[2]);
+
+        idleAnim.setPlayMode(Animation.PlayMode.LOOP);
+        runAnim.setPlayMode(Animation.PlayMode.LOOP);
+        jumpAnim.setPlayMode(Animation.PlayMode.NORMAL);
     }
 
     @Override
@@ -64,8 +81,10 @@ public class GameScreen implements Screen {
         // ── INPUT ──
         if (Gdx.input.isButtonPressed(Input.Keys.A)) {
             playerX -= MOVE_SPEED * delta;
-        } else if (Gdx.input.isButtonPressed(Input.Keys.D)){
+            facingRight = false;
+        } else if (Gdx.input.isButtonPressed(Input.Keys.D)) {
             playerX += MOVE_SPEED * delta;
+            facingRight = true;
         } else if (Gdx.input.isButtonPressed(Input.Keys.W) && onGround) {
             velocityY = JUMP_VELOCITY;
             onGround = false;
@@ -74,12 +93,33 @@ public class GameScreen implements Screen {
         // ── PHYSICS ──
         velocityY += GRAVITY * delta;
         playerY += velocityY * delta;
-        if (playerY <= GROUND_Y){
-
+        if (playerY <= GROUND_Y) {
+            playerY = GROUND_Y;
+            velocityY = 0.0f;
+            onGround = true;
         }
-        // TODO: Add GRAVITY * delta to velocityY
-        // TODO: Add velocityY * delta to playerY
-        // TODO: If playerY <= GROUND_Y → snap to ground, stop falling, set onGround = true
+
+        // ── ANIMATION ──
+
+        stateTime += delta;
+
+        Animation<TextureRegion> currentAnim;
+        if (!onGround) {
+            currentAnim = jumpAnim;
+        } else if (Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.D)) {
+            currentAnim = runAnim;
+        } else {
+            currentAnim = idleAnim;
+        }
+
+        boolean looping = onGround;
+        TextureRegion frame = currentAnim.getKeyFrame(stateTime, looping);
+
+        if (!facingRight && !frame.isFlipX()) {
+            frame.flip(true, false);
+        } else if (facingRight && frame.isFlipX()) {
+            frame.flip(true, false);
+        }
 
 
         // ── DRAW ──
@@ -97,9 +137,17 @@ public class GameScreen implements Screen {
         camera.setToOrtho(false, width, height);
     }
 
-    @Override public void pause() {}
-    @Override public void resume() {}
-    @Override public void hide() {}
+    @Override
+    public void pause() {
+    }
+
+    @Override
+    public void resume() {
+    }
+
+    @Override
+    public void hide() {
+    }
 
     @Override
     public void dispose() {
