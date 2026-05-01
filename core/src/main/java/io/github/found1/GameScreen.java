@@ -23,6 +23,10 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Rectangle;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class GameScreen implements Screen {
 
@@ -37,12 +41,15 @@ public class GameScreen implements Screen {
     // ── Rendering ──
     private SpriteBatch batch;
     private OrthographicCamera camera;
-    private Texture playerTexture;
-
-    // ── Animation ──
+    private Texture playerSheet, enemySheet, coinSheet;
+    private Animation<TextureRegion> slimeAnim, coinAnim;
     private Animation<TextureRegion> idleAnim, runAnim, jumpAnim;
     private float stateTime = 0f;
-    boolean facingRight = true;
+    private boolean facingRight = true;
+    private ArrayList<float[]> enemies;
+    private ArrayList<Rectangle> coins;
+    private Rectangle playerBounds;
+    private int score = 0;
 
     // ── Player ──
     private float playerX = 100f;
@@ -62,9 +69,9 @@ public class GameScreen implements Screen {
 
         // For Day 1, just load the full sprite sheet as a single texture.
         // On Day 2 you'll split it into animations.
-        playerTexture = new Texture("player.png");
+        playerSheet = new Texture("player.png");
 
-        TextureRegion[][] grid = TextureRegion.split(playerTexture, 32, 32);
+        TextureRegion[][] grid = TextureRegion.split(playerSheet, 64, 64);
 
         idleAnim = new Animation<>(0.2f, grid[0]);
         runAnim = new Animation<>(0.1f, grid[1]);
@@ -73,6 +80,65 @@ public class GameScreen implements Screen {
         idleAnim.setPlayMode(Animation.PlayMode.LOOP);
         runAnim.setPlayMode(Animation.PlayMode.LOOP);
         jumpAnim.setPlayMode(Animation.PlayMode.NORMAL);
+
+        enemySheet = new Texture("enemy-slime.png");
+        TextureRegion[][] eGrid = TextureRegion.split(enemySheet, 64, 64);
+        slimeAnim = new Animation<>(0.15f, eGrid[0]);
+        slimeAnim.setPlayMode(Animation.PlayMode.LOOP);
+
+        coinSheet = new Texture("coin.png");
+        TextureRegion[][] cGrid = TextureRegion.split(coinSheet, 32, 32);
+        coinAnim = new Animation<>(0.08f, cGrid[0]);
+        coinAnim.setPlayMode(Animation.PlayMode.LOOP);
+
+        playerBounds = new Rectangle(playerX, playerY, 64, 64);
+
+        enemies = new ArrayList<>();
+        enemies.add(new float[]{250, GROUND_Y, 80, 200, 350});
+        enemies.add(new float[]{250, GROUND_Y, 60, 400, 550});
+
+        coins = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            coins.add(new Rectangle(150 + i * 70, 200, 32, 32));
+        }
+    }
+
+    private void updateEnemies(float delta) {
+        for(var enemy : enemies) {
+            enemy[0] += enemy[2] * delta;
+            if (enemy[0] <= enemy[3]) {
+                enemy[0] = enemy[3];
+                enemy[2] = -enemy[2];
+            }
+            if (enemy[0] >= enemy[4]){
+                enemy[0] = enemy[4];
+                enemy[2] = -enemy[2];
+            }
+        }
+    }
+
+    private void checkCollisions() {
+        playerBounds.setPosition(playerX, playerY);
+
+        for (float[] enemy : enemies) {
+            Rectangle enemyRect = new Rectangle(enemy[0], enemy[1], 64, 64);
+            if (playerBounds.overlaps(enemyRect)) {
+                playerX = 100;
+                playerY = GROUND_Y;
+                velocityY = 0;
+                System.out.println("Hit: Resetting player.");
+            }
+        }
+
+        Iterator<Rectangle> it = coins.iterator();
+               while (it.hasNext()) {
+                   Rectangle coin = it.next();
+                   if (playerBounds.overlaps(coin)) {
+                       it.remove();
+                       score++;
+                       System.out.println("Coin! Score: " + score);
+                   }
+               }
     }
 
     @Override
@@ -98,6 +164,11 @@ public class GameScreen implements Screen {
             velocityY = 0.0f;
             onGround = true;
         }
+
+        // ── UPDATES ──
+
+        updateEnemies(delta);
+        checkCollisions();
 
         // ── ANIMATION ──
 
@@ -128,7 +199,18 @@ public class GameScreen implements Screen {
 
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
-        batch.draw(playerTexture, playerX, playerY, 64, 64);
+        batch.draw(frame, playerX, playerY, 64, 64);
+
+        TextureRegion slimeFrame = slimeAnim.getKeyFrame(stateTime, true);
+        for (float[] enemy : enemies) {
+            batch.draw(slimeFrame, enemy[0], enemy[1]);
+        }
+
+        TextureRegion coinFrame = coinAnim.getKeyFrame(stateTime, true);
+        for (Rectangle coin : coins) {
+            batch.draw(coinFrame, coin.x, coin.y);
+        }
+
         batch.end();
     }
 
@@ -152,6 +234,8 @@ public class GameScreen implements Screen {
     @Override
     public void dispose() {
         batch.dispose();
-        playerTexture.dispose();
+        playerSheet.dispose();
+        enemySheet.dispose();
+        coinSheet.dispose();
     }
 }
