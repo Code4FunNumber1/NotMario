@@ -17,10 +17,12 @@ package io.github.found1;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
@@ -37,11 +39,14 @@ public class GameScreen implements Screen {
     private static final float JUMP_VELOCITY = 300f;
     private static final float MOVE_SPEED = 150f;
     private static final float GROUND_Y = 50f;
+    private static final int START_LIVES = 3;
+    private static final float SPAWN_X = 50f;
+    private static final float SPAWN_Y = 80f;
 
     // ── Rendering ──
     private SpriteBatch batch;
     private OrthographicCamera camera;
-    private Texture playerSheet, enemySheet, coinSheet;
+    private Texture playerSheet, enemySheet, coinSheet, pixel;
     private Animation<TextureRegion> slimeAnim, coinAnim;
     private Animation<TextureRegion> idleAnim, runAnim, jumpAnim;
     private float stateTime = 0f;
@@ -50,6 +55,11 @@ public class GameScreen implements Screen {
     private ArrayList<Rectangle> coins;
     private Rectangle playerBounds;
     private int score = 0;
+    private ArrayList<Rectangle> platforms;
+    private int lives = START_LIVES;
+    private boolean switchToGameOver = false;
+    private boolean playerWon = false;
+    private BitmapFont hudFont;
 
     // ── Player ──
     private float playerX = 100f;
@@ -70,8 +80,13 @@ public class GameScreen implements Screen {
         // For Day 1, just load the full sprite sheet as a single texture.
         // On Day 2 you'll split it into animations.
         playerSheet = new Texture("player.png");
+        pixel = new Texture("white.png");
 
         TextureRegion[][] grid = TextureRegion.split(playerSheet, 64, 64);
+
+        hudFont = new BitmapFont();
+        hudFont.setColor(Color.WHITE);
+        hudFont.getData().setScale(1.5f);
 
         idleAnim = new Animation<>(0.2f, grid[0]);
         runAnim = new Animation<>(0.1f, grid[1]);
@@ -101,6 +116,62 @@ public class GameScreen implements Screen {
         for (int i = 0; i < 5; i++) {
             coins.add(new Rectangle(150 + i * 70, 200, 32, 32));
         }
+
+        // DAY 3 TODO 5: Create the player bounding box:
+        //   playerBounds = new Rectangle(playerX, playerY, 64, 64);
+        //
+        //   DAY 6 TODO 3: Later, change this to tighter bounds:
+        //     playerBounds = new Rectangle(0, 0, 28, 48);
+
+
+        // DAY 4 TODO 4: Create platforms list and add platforms:
+        //   platforms = new ArrayList<>();
+        //   platforms.add(new Rectangle(0, 30, W, 20));           // ground
+        //   platforms.add(new Rectangle(100, 130, 120, 16));      // lower
+        //   platforms.add(new Rectangle(300, 130, 120, 16));
+        //   platforms.add(new Rectangle(500, 130, 120, 16));
+        //   platforms.add(new Rectangle(50, 230, 140, 16));       // mid
+        //   platforms.add(new Rectangle(250, 260, 160, 16));
+        //   platforms.add(new Rectangle(470, 230, 130, 16));
+        //   platforms.add(new Rectangle(150, 360, 130, 16));      // high
+        //   platforms.add(new Rectangle(380, 390, 140, 16));
+
+
+        // DAY 3 TODO 6: Create enemies ArrayList and add 2 enemies:
+        //   enemies = new ArrayList<>();
+        //   enemies.add(new float[]{250, GROUND_Y, 80, 200, 350});
+        //   enemies.add(new float[]{450, GROUND_Y, 60, 400, 550});
+        //
+        //   DAY 4 TODO 5: Later, update enemies to patrol on platforms:
+        //     enemies = new ArrayList<>();
+        //     enemies.add(new float[]{200, 50, 70, 100, 350});      // ground
+        //     enemies.add(new float[]{310, 146, 50, 300, 400});     // lower platform
+        //     enemies.add(new float[]{260, 276, -45, 250, 390});    // mid platform
+
+
+        // DAY 3 TODO 7: Create coins ArrayList and add 5 coins:
+        //   coins = new ArrayList<>();
+        //   for (int i = 0; i < 5; i++) {
+        //       coins.add(new Rectangle(150 + i * 70, 200, 32, 32));
+        //   }
+        //
+        //   DAY 4 TODO 6: Later, update coins to sit on platforms:
+        //     coins = new ArrayList<>();
+        //     coins.add(new Rectangle(60, 70, 32, 32));         // ground
+        //     coins.add(new Rectangle(440, 70, 32, 32));
+        //     coins.add(new Rectangle(140, 160, 32, 32));       // lower
+        //     coins.add(new Rectangle(540, 160, 32, 32));
+        //     coins.add(new Rectangle(80, 260, 32, 32));        // mid
+        //     coins.add(new Rectangle(310, 290, 32, 32));
+        //     coins.add(new Rectangle(510, 260, 32, 32));
+        //     coins.add(new Rectangle(190, 390, 32, 32));       // high
+        //     coins.add(new Rectangle(430, 420, 32, 32));
+
+
+        // DAY 5 TODO 3: Set spawn position:
+        //   playerX = SPAWN_X;
+        //   playerY = SPAWN_Y;
+
     }
 
     private void updateEnemies(float delta) {
