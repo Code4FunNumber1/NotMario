@@ -10,21 +10,26 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
-public class MenuScreen implements Screen {
+public class GameOverScreen implements Screen {
 
     private final Main game;
+    private final int finalScore;
+    private final boolean won;
+
     private SpriteBatch batch;
     private OrthographicCamera camera;
     private BitmapFont titleFont;
-    private BitmapFont promptFont;
+    private BitmapFont bodyFont;
     private GlyphLayout layout;
     private float stateTime = 0f;
 
     private static final int W = 640;
     private static final int H = 480;
 
-    public MenuScreen(Main game) {
+    public GameOverScreen(Main game, int finalScore, boolean won) {
         this.game = game;
+        this.finalScore = finalScore;
+        this.won = won;
     }
 
     @Override
@@ -34,12 +39,11 @@ public class MenuScreen implements Screen {
         camera.setToOrtho(false, W, H);
 
         titleFont = new BitmapFont();
-        titleFont.setColor(Color.YELLOW);
         titleFont.getData().setScale(3f);
 
-        promptFont = new BitmapFont();
-        promptFont.setColor(Color.WHITE);
-        promptFont.getData().setScale(1.5f);
+        bodyFont = new BitmapFont();
+        bodyFont.setColor(Color.WHITE);
+        bodyFont.getData().setScale(1.5f);
 
         layout = new GlyphLayout();
     }
@@ -48,8 +52,13 @@ public class MenuScreen implements Screen {
     public void render(float delta) {
         stateTime += delta;
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
             game.setScreen(new GameScreen(game));
+            dispose();
+            return;
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.M)) {
+            game.setScreen(new MenuScreen(game));
             dispose();
             return;
         }
@@ -60,24 +69,30 @@ public class MenuScreen implements Screen {
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
 
-        // Title — centered
-        String title = "PLATFORMER";
+        // Title — yellow for win, red for lose
+        String title = won ? "YOU WIN!" : "GAME OVER";
+        titleFont.setColor(won ? Color.YELLOW : Color.RED);
         layout.setText(titleFont, title);
         titleFont.draw(batch, title, (W - layout.width) / 2f, H / 2f + 80);
 
-        // Blinking prompt — toggles every 0.5 seconds
+        // Final score
+        String scoreText = "Final Score: " + finalScore;
+        layout.setText(bodyFont, scoreText);
+        bodyFont.draw(batch, scoreText, (W - layout.width) / 2f, H / 2f);
+
+        // Blinking restart prompt
         if ((int) (stateTime * 2) % 2 == 0) {
-            String prompt = "Press ENTER to Start";
-            layout.setText(promptFont, prompt);
-            promptFont.draw(batch, prompt, (W - layout.width) / 2f, H / 2f - 20);
+            String restart = "Press R to Play Again";
+            layout.setText(bodyFont, restart);
+            bodyFont.draw(batch, restart, (W - layout.width) / 2f, H / 2f - 60);
         }
 
-        // Controls hint at bottom
-        promptFont.getData().setScale(1f);
-        String controls = "Arrow Keys: Move   |   Space: Jump";
-        layout.setText(promptFont, controls);
-        promptFont.draw(batch, controls, (W - layout.width) / 2f, 60);
-        promptFont.getData().setScale(1.5f);
+        // Menu option
+        bodyFont.getData().setScale(1.2f);
+        String menu = "Press M for Menu";
+        layout.setText(bodyFont, menu);
+        bodyFont.draw(batch, menu, (W - layout.width) / 2f, H / 2f - 110);
+        bodyFont.getData().setScale(1.5f);
 
         batch.end();
     }
@@ -92,6 +107,6 @@ public class MenuScreen implements Screen {
     public void dispose() {
         batch.dispose();
         titleFont.dispose();
-        promptFont.dispose();
+        bodyFont.dispose();
     }
 }
